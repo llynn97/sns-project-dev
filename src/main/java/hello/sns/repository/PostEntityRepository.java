@@ -15,4 +15,5 @@ public interface PostEntityRepository extends JpaRepository<PostEntity,Integer> 
 
 
 
+
 }
