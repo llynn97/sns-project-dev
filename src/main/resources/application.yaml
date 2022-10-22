@@ -19,3 +19,5 @@ jwt:
   secret-key: hello.sns-application-2022.secret_key
    # 30 days
   token.expired-time-ms: 2592000000
+
+spring.redis.url: redis://:p1d66c2c42eb94d1d4200bb6b4fee6c8c10da506e5b9bfd708e0594b7d5ccf6ab@ec2-18-211-196-34.compute-1.amazonaws.com:27539

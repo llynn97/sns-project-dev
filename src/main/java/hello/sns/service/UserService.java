@@ -8,6 +8,7 @@ import hello.sns.model.User;
 import hello.sns.model.entity.AlarmEntity;
 import hello.sns.model.entity.UserEntity;
 import hello.sns.repository.AlarmEntityRepository;
+import hello.sns.repository.UserCacheRepository;
 import hello.sns.repository.UserEntityRepository;
 import hello.sns.util.JwtTokenUtils;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class UserService {
     private final UserEntityRepository userEntityRepository;
     private final AlarmEntityRepository alarmEntityRepository;
     private final BCryptPasswordEncoder encoder;
+    private final UserCacheRepository userCacheRepository;
 
     @Value("${jwt.secret-key}")
     private String secretKey;
@@ -36,8 +38,9 @@ public class UserService {
     private Long expiredTimeMs;
 
     public User loadUserByUserName(String userName){
-        return userEntityRepository.findByUserName(userName).map(User::fromEntity).orElseThrow(()->
-                new SnsApplicationException(ErrorCode.USER_NOT_FOUND,String.format("%s not founded",userName)));
+        return userCacheRepository.getUser(userName).orElseGet(()->
+         userEntityRepository.findByUserName(userName).map(User::fromEntity).orElseThrow(()->
+                new SnsApplicationException(ErrorCode.USER_NOT_FOUND,String.format("%s not founded",userName))));
     }
 
     @Transactional
@@ -52,9 +55,9 @@ public class UserService {
     }
 
     public String login(String userName, String password){
-
-        UserEntity userEntity = userEntityRepository.findByUserName(userName).orElseThrow(()->new SnsApplicationException(ErrorCode.USER_NOT_FOUND,String.format("%s not founded",userName)));
-        if(!encoder.matches(password,userEntity.getPassword())){
+        User user=loadUserByUserName(userName);
+        userCacheRepository.setUser(user);
+        if(!encoder.matches(password,user.getPassword())){
             throw new SnsApplicationException(ErrorCode.INVALID_PASSWORD);
         }
         //토큰 생성
