@@ -1,6 +1,7 @@
 package hello.sns.repository;
 
 
+import com.sun.istack.NotNull;
 import hello.sns.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

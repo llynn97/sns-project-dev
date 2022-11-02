@@ -21,3 +21,26 @@ jwt:
   token.expired-time-ms: 2592000000
 
 spring.redis.url: redis://:p1d66c2c42eb94d1d4200bb6b4fee6c8c10da506e5b9bfd708e0594b7d5ccf6ab@ec2-18-211-196-34.compute-1.amazonaws.com:27539
+
+spring:
+  kafka:
+    properties:
+      security.protocol: SASL_SSL
+      sasl.mechanism: SCRAM-SHA-256
+      sasl.jaas.config: org.apache.kafka.common.security.scram.ScramLoginModule required username="glbdjhnf" password="jBI9DvDiX7Y6_jna7i3KbvM34TfFZUZr";
+    consumer:
+      properties.spring.json.trusted.packages: "*"
+      bootstrap-servers: dory-01.srvs.cloudkafka.com:9094 , dory-02.srvs.cloudkafka.com:9094 , dory-03.srvs.cloudkafka.com:9094
+      group-id: alarm
+      auto-offset-reset: latest
+      key-deserializer: org.apache.kafka.common.serialization.IntegerDeserializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    listener:
+      ack-mode: MANUAL
+    producer:
+      bootstrap-servers: dory-01.srvs.cloudkafka.com:9094 , dory-02.srvs.cloudkafka.com:9094 , dory-03.srvs.cloudkafka.com:9094
+      key-serializer: org.apache.kafka.common.serialization.IntegerSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties.enable.idempotence: false
+    topic:
+      alarm: glbdjhnf-alarm

@@ -1,5 +1,6 @@
 package hello.sns.service;
 
+import hello.sns.event.AlarmEvent;
 import hello.sns.exception.ErrorCode;
 import hello.sns.exception.SnsApplicationException;
 import hello.sns.model.AlarmArgs;
@@ -7,6 +8,7 @@ import hello.sns.model.AlarmType;
 import hello.sns.model.Comment;
 import hello.sns.model.Post;
 import hello.sns.model.entity.*;
+import hello.sns.producer.AlarmProducer;
 import hello.sns.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,6 +27,11 @@ public class PostService {
     private final LikeEntityRepository likeEntityRepository;
     private final CommentEntityRepository commentEntityRepository;
     private final AlarmEntityRepository alarmEntityRepository;
+
+    private final AlarmService alarmService;
+
+    private final AlarmProducer alarmProducer;
+
     @Transactional
     public void create(String title, String body, String userName) {
         //user find
@@ -81,8 +88,10 @@ public class PostService {
             throw new SnsApplicationException(ErrorCode.ALREADY_LIKED, String.format("userName %s liked the post %s", userName, postId));
         });
         //like save
-        likeEntityRepository.save(LikeEntity.of(userEntity, postEntity));
-        alarmEntityRepository.save(AlarmEntity.of(postEntity.getUser(), AlarmType.NEW_LIKE_ON_POST,new AlarmArgs(userEntity.getId(),postEntity.getId())));
+        //AlarmEntity alarmEntity = alarmEntityRepository.save(AlarmEntity.of(postEntity.getUser(), AlarmType.NEW_LIKE_ON_POST, new AlarmArgs(userEntity.getId(), postEntity.getId())));
+        // alarmService.send(alarmEntity.getId(), postEntity.getUser().getId());
+        alarmProducer.send(new AlarmEvent(postEntity.getUser().getId(),AlarmType.NEW_LIKE_ON_POST, new AlarmArgs(userEntity.getId(), postEntity.getId())));
+
 
     }
 
@@ -96,13 +105,15 @@ public class PostService {
     public void comment(Integer postId, String userName, String comment) {
         PostEntity postEntity = getPostOrException(postId);
         UserEntity userEntity = getUserOrException(userName);
-        commentEntityRepository.save(CommentEntity.of(userEntity,postEntity,comment));
-        alarmEntityRepository.save(AlarmEntity.of(postEntity.getUser(), AlarmType.NEW_COMMENT_ON_POST,new AlarmArgs(userEntity.getId(),postEntity.getId())));
+        commentEntityRepository.save(CommentEntity.of(userEntity, postEntity, comment));
+        AlarmEntity alarmEntity = alarmEntityRepository.save(AlarmEntity.of (postEntity.getUser(), AlarmType.NEW_COMMENT_ON_POST, new AlarmArgs(userEntity.getId(), postEntity.getId())));
+        alarmProducer.send(new AlarmEvent(postEntity.getUser().getId(),AlarmType.NEW_COMMENT_ON_POST, new AlarmArgs(userEntity.getId(), postEntity.getId())));
+
     }
 
-    public Page<Comment> getComments(Integer postId, Pageable pageable){
+    public Page<Comment> getComments(Integer postId, Pageable pageable) {
         PostEntity postEntity = getPostOrException(postId);
-        return commentEntityRepository.findAllByPost(postEntity,pageable).map(Comment::fromEntity);
+        return commentEntityRepository.findAllByPost(postEntity, pageable).map(Comment::fromEntity);
     }
 
     private PostEntity getPostOrException(Integer postId) {
